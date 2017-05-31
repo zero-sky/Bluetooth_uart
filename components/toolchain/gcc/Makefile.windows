@@ -1,0 +1,5 @@
+
+GNU_INSTALL_ROOT := D:/Program/GNU_ARM
+GNU_VERSION := 4.8.4
+GNU_PREFIX := arm-none-eabi
+

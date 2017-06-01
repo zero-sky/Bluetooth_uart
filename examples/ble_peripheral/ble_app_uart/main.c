@@ -334,8 +334,16 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
     }
 }
-
-
+//flash相关事件
+static void  pstorage_sys_event_handler(uint32_t evt_id)
+{
+	
+}
+//系统事件调度
+static void sys_evt_dispatch(uint32_t evt_id)
+{
+	pstorage_sys_event_handler(evt_id);
+}
 /**@brief Function for dispatching a S110 SoftDevice event to all modules with a S110 SoftDevice 
  *        event handler.
  * 协议栈事件调度
@@ -376,9 +384,13 @@ static void ble_stack_init(void)
     err_code = sd_ble_enable(&ble_enable_params);
     APP_ERROR_CHECK(err_code);
     
-    // Subscribe for BLE events.
+    // Subscribe for BLE events.订阅BLE事件处理函数
     err_code = softdevice_ble_evt_handler_set(ble_evt_dispatch);
     APP_ERROR_CHECK(err_code);
+	
+	//订阅系统事件处理函数
+	err_code = softdevice_sys_evt_handler_set(sys_evt_dispatch);
+	APP_ERROR_CHECK(err_code);
 }
 
 
@@ -428,6 +440,7 @@ static void is_at_cmd(void)
 	{
 		at_cmd_start(data_array);
 	}
+//是否转发AT命令
 	else
 	{
 		uint32_t       err_code;
@@ -456,8 +469,8 @@ void timer_event_handler(nrf_timer_event_t event_type, void* p_context)
         case NRF_TIMER_EVENT_COMPARE0:
             if(uart_rxto == 1)
 			{
-				LEDS_INVERT(LEDS_MASK);
-				uart_rxto = 0;		//为0时不算收到数据
+				LEDS_INVERT(LEDS_MASK);		//测试
+				uart_rxto = 0;				//为0时不算收到数据
 				is_at_cmd();
 			}
             break;
@@ -470,8 +483,9 @@ void timer_event_handler(nrf_timer_event_t event_type, void* p_context)
 /**
  * 定时器，收到UART最后一个数据n ms后未收到下一个数据，表示数据接收结束
  * 形参，毫秒，建议2字节以上，即波特率的20倍以上
- * 1200baud=833us,9600=104us,115200=8.7us
- * 目前还没找到根据波特率自动调整时间的方法，因此暂时使用9600baud，即定时2ms以上
+ * 9600=104us,115200=8.7us
+ * 目前开放设置波特率为9600/19200/38400/115200。超时固定最低波特率的20倍，即2ms(104us*20)
+ * 因不支持9600以下波特率，所以该值不需要改
  **/
 const nrf_drv_timer_t TIMER_UART = NRF_DRV_TIMER_INSTANCE(1);
 void time_init(uint32_t time_ms)
